@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="bitplan.gui.javafx" type="repository">
+    <properties maven-id="com.bitplan.gui:com.bitplan.javafx:0.0.11" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/com.bitplan.javafx-0.0.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/args4j-2.0.29.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/com.bitplan.gui-0.0.8.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/gson-2.8.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-io-2.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/controlsfx-8.40.14.jar!/" />
+      <root url="file://$PROJECT_DIR$/lib/fontawesomefx-commons-9.1.2.pom" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

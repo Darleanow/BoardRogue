@@ -1,13 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 public class Game extends JFrame {
     private JPanel gameBoardPanel;
     private JPanel buttonPanel;
     private JPanel characterPanel;
-    private ArrayList<Personnage> characters;
+    private final ArrayList<Personnage> characters;
 
     public Game() {
         characters = new ArrayList<>();

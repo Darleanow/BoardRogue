@@ -1,9 +1,11 @@
 public class Mage extends Personnage {
+    private final Philtre philtre;
     private final Sort sort;
 
-    public Mage(String nom, int hp, Sort sort)
+    public Mage(String nom, Philtre philtre, Sort sort)
     {
-        super(nom, hp);
+        super(nom);
+        this.philtre = philtre;
         this.sort = sort;
     }
 
@@ -13,13 +15,8 @@ public class Mage extends Personnage {
     }
 
     @Override
-    public void setHp(int hp) {
-        super.setHp(hp);
-    }
-
-    @Override
-    public int getHp() {
-        return super.getHp();
+    public Philtre getDefense() {
+        return philtre;
     }
 
     @Override

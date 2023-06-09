@@ -1,27 +1,29 @@
 public class Guerrier extends Personnage {
+    private final Bouclier bouclier;
+    //Final pour l'économie de mémoire
     private final Arme arme;
 
-    public Guerrier(String nom, int hp, Arme arme)
+    //Constructeur guerrier, super
+    public Guerrier(String nom, Bouclier bouclier, Arme arme)
     {
-        super(nom, hp);
+        //On construit le nom/hp du parent pour économiser la mémoire
+        super(nom);
+        this.bouclier=bouclier;
         this.arme = arme;
     }
 
+    //Récuperer les infos de classe
     @Override
     public String toString() {
-        return "Nom: " + getNom() + ", Classe: " + getClass().getSimpleName() + ", HP: " + getHp();
+        return "Nom: " + getNom() + ", Classe: " + getClass().getSimpleName();
     }
 
     @Override
-    public void setHp(int hp) {
-        super.setHp(hp);
+    public Bouclier getDefense() {
+        return bouclier;
     }
 
-    @Override
-    public int getHp() {
-        return super.getHp();
-    }
-
+    //Setter et getter nom
     @Override
     public void setNom(String nom) {
         super.setNom(nom);
@@ -32,11 +34,13 @@ public class Guerrier extends Personnage {
         return super.getNom();
     }
 
+    //setter et getter arme
     @Override
     public ArmeBase getArme() {
         return arme;
     }
 
+    //attaquer un personnage
     @Override
     public void attaquer(Personnage personnage)
     {

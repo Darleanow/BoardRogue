@@ -1,14 +1,16 @@
 public abstract class Personnage {
+    //Nom, pv et objet de ArmeBase qui permet l'inheritance
     protected String nom;
-    protected int hp;
+    protected DefenseBase hp;
     protected ArmeBase arme;
 
-    public Personnage(String nom, int hp)
+    //Constructeur Personnage
+    public Personnage(String nom)
     {
         this.nom = nom;
-        this.hp = hp;
     }
 
+    //Setter et getter pour nom
     public void setNom(String nom)
     {
         this.nom = nom;
@@ -19,20 +21,17 @@ public abstract class Personnage {
         return this.nom;
     }
 
-    public void setHp(int hp)
+    public DefenseBase getDefense()
     {
-        this.hp = hp;
+        return hp;
     }
 
-    public int getHp()
-    {
-        return this.hp;
-    }
-
+    //récuperer l'arme
     public ArmeBase getArme() {
         return arme;
     }
 
+    //inutile pour le moment
     @SuppressWarnings("unused")
     public abstract void attaquer(Personnage personnage);
 }

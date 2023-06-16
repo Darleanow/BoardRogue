@@ -37,7 +37,7 @@ public class Game extends JFrame {
 
     //Mettre en place la fenetre, titre/taille/ajout des composants
     private void setUpWindow() {
-        setTitle("Livrable 4-5");
+        setTitle("Livrable 9");
         setSize(800, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);

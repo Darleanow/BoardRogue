@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public abstract class Personnage {
     //Nom, pv et objet de ArmeBase qui permet l'inheritance
     protected String nom;
@@ -30,6 +32,19 @@ public abstract class Personnage {
     public ArmeBase getArme() {
         return arme;
     }
+
+    public void setEffect(Effet effet) {
+        if (this.arme != null) {
+            if (Objects.equals(effet.getName(), "Burn")) {
+                Burn burn = new Burn();
+                this.arme.setEffect(burn);
+            } else {
+                Stun stun = new Stun();
+                this.arme.setEffect(stun);
+            }
+        }
+    }
+
 
     //inutile pour le moment
     @SuppressWarnings("unused")

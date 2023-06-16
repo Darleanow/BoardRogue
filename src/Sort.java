@@ -18,4 +18,14 @@ public class Sort extends  ArmeBase{
     {
         System.out.println("GET THAT SPELL IN THA PIF!");
     }
+
+    public void setEffect(Effet effet) {
+        super.setEffect(effet);
+    }
+
+    public void applyEffect() {
+        if (this.effet != null) {
+            this.effet.applyEffect();
+        }
+    }
 }

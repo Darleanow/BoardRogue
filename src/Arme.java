@@ -18,4 +18,14 @@ public class Arme extends ArmeBase {
         System.out.println("Attacked!");
     }
 
+    public void setEffect(Effet effet) {
+        super.setEffect(effet);
+    }
+
+    public void applyEffect() {
+        if (this.effet != null) {
+            this.effet.applyEffect();
+        }
+    }
+
 }

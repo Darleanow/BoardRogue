@@ -3,6 +3,8 @@ public class ArmeBase {
     protected String nom;
     protected int degats;
 
+    protected Effet effet;
+
     //Setter et getter nom
     public String getNom() {
         return this.nom;
@@ -18,5 +20,13 @@ public class ArmeBase {
     }
     public void setDegats(Integer newDamage) {
         this.degats = newDamage;
+    }
+
+    public Effet getEffect() {
+        return this.effet;
+    }
+
+    public void setEffect(Effet effet) {
+        this.effet = effet;
     }
 }

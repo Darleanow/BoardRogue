@@ -111,6 +111,8 @@ public class Board implements ActionListener {
                     button.setBackground(new Color(122, 74, 94)); // Pale Red for end
                 } else {
                     String specialCase = getSpecialCase();
+                    button.setText(specialCase);
+                    button.setName(specialCase);
                     if (specialCase != null) {
                         button.setText(specialCase);
                         // Set background color based on special case
@@ -129,6 +131,8 @@ public class Board implements ActionListener {
                         }
                     }
                 }
+
+
 
                 // Modify button size
                 Dimension buttonSize = new Dimension(100, 100);
@@ -229,8 +233,10 @@ public class Board implements ActionListener {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 JButton button = buttons[i][j];
-                if (button != null && button.getText().equals(specialCase)) {
-                    count++;
+                if (button != null && button.getText() != null) {
+                    if (button.getText().equals(specialCase)){
+                        count++;
+                    }
                 }
             }
         }
@@ -276,13 +282,16 @@ public class Board implements ActionListener {
             newJ = 0;
         }
 
-        // Update button status
-        if (buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Dragon") ||
-                buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Goblin")
-                || buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Sorcier")) {
-            Enemy monster = monsters.get(buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName());
-            combatPanel.startBattle(player, monster);
-            cardLayout.show(cards, "Combat");
+        if (buttons[xyPlayerPos[0]][xyPlayerPos[1]] != null &&
+                buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName() != null) {
+            if (buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Dragon") ||
+                    buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Goblin") ||
+                    buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Sorcier")) {
+
+                Enemy monster = monsters.get(buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName());
+                combatPanel.startBattle(player, monster);
+                cardLayout.show(cards, "Combat");
+            }
         }
         buttons[xyPlayerPos[0]][xyPlayerPos[1]].setText("");
         buttons[0][0].setText("Start");
@@ -307,8 +316,10 @@ public class Board implements ActionListener {
 
                 if (i == xyPlayerPos[0] && j == xyPlayerPos[1]) {
                     button.setText("You");
+                    button.setName("You");
                 } else if (i == 7 && j == 0) {
                     button.setText("End");
+                    button.setName("End");
                 }
             }
         }

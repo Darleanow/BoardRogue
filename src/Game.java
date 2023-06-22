@@ -98,7 +98,7 @@ public class Game extends JFrame {
             for (Personnage character : characters) {
                 if (character.getNom().equals(selectedCharacterName)) {
                     @SuppressWarnings("unused")
-                    Board board = new Board("Partie en cours pour " + character.getNom());
+                    Board board = new Board("Partie en cours pour " + character.getNom(), character);
                 }
             }
         }

@@ -1,370 +1,283 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
-//import java.util.Stack;
-import java.awt.CardLayout;
-public class Board implements ActionListener {
-    JFrame frame;
-    JButton[][] buttons;
-    Integer[] xyPlayerPos = {0, 0};
-    int current = 0;
-    Map<String, Integer> specialCases;
-    List<String> luckyCases;
-    private Map<String, Enemy> monsters;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
+public class Board {
+    private final Map<JButton, String> buttonOrigins = new HashMap<>();
+    private static final Map<String, Integer> SPECIAL_CASES = Map.of(
+            "Dragon", 4,
+            "Sorcier", 10,
+            "Goblin", 10,
+            "Epee", 4,
+            "Massue", 5,
+            "Lighting", 5,
+            "FireBall", 2,
+            "PotionS", 6,
+            "PotionM", 2
+    );
+
+    private Map<String, Integer> specialCases = new HashMap<>(SPECIAL_CASES);
+    private final Map<String, String> luckyCasesContents = new HashMap<>();
+
+    private static final List<String> LUCKY_CASES = List.of(
+            "Epee", "Massue", "Lighting", "FireBall", "PotionS", "PotionM"
+    );
+
+    private final JFrame frame;
+    private final JButton[][] buttons = new JButton[8][8];
+    private final Map<String, Enemy> monsters = new HashMap<>();
+    private final Personnage player;
     private CardLayout cardLayout = new CardLayout();
-    private JPanel cards = new JPanel(cardLayout);
+    private final JPanel cards = new JPanel(cardLayout);
+    private final CombatPanel combatPanel;
+    private int current = 0;
+    private final Point playerPos = new Point(0, 0);
 
-    private CombatPannel combatPanel;
-
-    private Personnage player;
     public Board(String windowName, Personnage player) {
-        monsters = new HashMap<>();
-        SwingUtilities.invokeLater(() -> {
-            frame = new JFrame(windowName);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(800, 600);
 
-            this.player = player;
+        frame = new JFrame(windowName);
+        this.player = player;
 
-            JPanel mainPanel = new JPanel();
-            mainPanel.setLayout(new BorderLayout());
+        // Change to cards.setLayout(new CardLayout());
+        cards.setLayout(new CardLayout());
 
-            JPanel boardPanel = new JPanel(new GridLayout(8, 8));
-            initializeSpecialCases();
-            createButtons(boardPanel);
+        // Create mainPanel before assigning it to cards
+        JPanel mainPanel = setupMainPanel();
 
-            JButton quitButton = new JButton("Exit");
-            JButton startButton = new JButton("Roll the dice");
+        // Assign mainPanel to cards
+        cards.add(mainPanel, "Board");
 
-            quitButton.addActionListener(e -> frame.dispose());
+        combatPanel = new CombatPanel();
+        combatPanel.setCards(cards);
 
-            startButton.addActionListener(e -> {
-                int diceRoll = new Random().nextInt(6) + 1;
-                current += diceRoll;
-                JOptionPane.showMessageDialog(frame, "You got: " + diceRoll +
-                        "\nProgress: " + current + "/64.");
-                advancePlayer(diceRoll);
-            });
+        // Add combatPanel to cards
+        cards.add(combatPanel, "Combat");
 
-            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-            buttonPanel.add(startButton);
-            buttonPanel.add(quitButton);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+        frame.getContentPane().add(cards);
+        frame.setVisible(true);
 
-            mainPanel.add(boardPanel, BorderLayout.CENTER);
-            mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-            cards.add(mainPanel, "Board");
 
-            frame.getContentPane().add(cards);
-            frame.setVisible(true);
-            CombatPannel combatPanel = new CombatPannel();
-            combatPanel.setCards(this.cardLayout,this.cards);
-            mainPanel.add(combatPanel, BorderLayout.EAST);
-            cards.add(combatPanel, "Combat");
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);  // Disable default close operation
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Reset player's HP to maximum value before exiting
+                player.getDefense().setHp(player.getDefense().getMaxHp());
+                frame.dispose();  // Close the frame
+            }
         });
     }
 
-    private void initializeSpecialCases() {
-        specialCases = new HashMap<>();
-        specialCases.put("Dragon", 4);
-        specialCases.put("Sorcier", 10);
-        specialCases.put("Goblin", 10);
-        specialCases.put("Epee", 4);
-        specialCases.put("Massue", 5);
-        specialCases.put("Lighting", 5);
-        specialCases.put("FireBall", 2);
-        specialCases.put("PotionS", 6);
-        specialCases.put("PotionM", 2);
+    private JPanel setupMainPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        JPanel boardPanel = new JPanel(new GridLayout(8, 8));
 
-        luckyCases = new ArrayList<String>();
-        luckyCases.addAll(Arrays.asList("Epee", "Massue", "Lighting", "FireBall", "PotionS", "PotionM"));
+        setupButtons(boardPanel);
+
+        JPanel buttonPanel = setupControlButtons();
+        mainPanel.add(boardPanel, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        return mainPanel;
     }
 
-    // Créer des boutons
-    private void createButtons(JPanel boardPanel) {
-        // Allocation mémoire
-        this.buttons = new JButton[8][8];
-
-        // Simple boucle logique
+    private void setupButtons(JPanel boardPanel) {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 JButton button = new JButton();
-                button.addActionListener(new ActionListener() {
+                setupButtonState(button, i, j);
+                button.addActionListener(new AbstractAction() {
+                    @Override
                     public void actionPerformed(ActionEvent e) {
-                        // Handle the button click event
-                        JButton clickedButton = (JButton) e.getSource();
-                        String buttonText = clickedButton.getText();
-
-                        // Display information about the clicked case in a panel or dialog
-                        displayCaseInformation(buttonText);
-                    }
-                });
-                button.setForeground(Color.BLACK);
-                if (i == xyPlayerPos[0] && j == xyPlayerPos[1]) {
-                    button.setText("You");
-                    button.setBackground(new Color(83, 156, 190)); // Pale Blue for current player position
-                } else if (i == 7 && j == 0) {
-                    button.setText("End");
-                    button.setBackground(new Color(122, 74, 94)); // Pale Red for end
-                } else {
-                    String specialCase = getSpecialCase();
-                    button.setText(specialCase);
-                    button.setName(specialCase);
-                    if (specialCase != null) {
-                        button.setText(specialCase);
-                        // Set background color based on special case
-                        switch (specialCase) {
-                            case "Lucky Case" ->
-                                    button.setBackground(new Color(107, 124, 101)); // Pale Green for lucky cases
-                            case "Goblin", "Sorcier" -> {
-                                monsters.put(specialCase, new Enemy(specialCase));
-                                button.setBackground(new Color(116, 130, 163)); // Pale Gray for enemies
-                            }
-
-                            case "Dragon" -> {
-                                monsters.put(specialCase, new Enemy(specialCase));
-                                button.setBackground(new Color(171, 93, 93));
-                            }
+                        if (button.getText().equals("You")) {
+                            displayCaseInformation(buttonOrigins.get(button));
                         }
                     }
-                }
-
-
-
-                // Modify button size
-                Dimension buttonSize = new Dimension(100, 100);
-                button.setPreferredSize(buttonSize);
-                button.setMinimumSize(buttonSize);
-                button.setMaximumSize(buttonSize);
-                button.setSize(buttonSize);
-
-                buttons[i][j] = button;
+                });
                 boardPanel.add(button);
+                buttons[i][j] = button;
             }
         }
     }
 
-    private void displayCaseInformation(String caseText) {
-        // Create a dialog box to display case information
-        JOptionPane.showMessageDialog(null, "Case information: " + caseText, "Case Information", JOptionPane.INFORMATION_MESSAGE);
+    private JPanel setupControlButtons() {
+        JButton quitButton = new JButton("Exit");
+        quitButton.addActionListener(e -> frame.dispose());
+
+        JButton startButton = new JButton("Roll the dice");
+        startButton.addActionListener(e -> rollDice());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        buttonPanel.add(startButton);
+        buttonPanel.add(quitButton);
+
+        return buttonPanel;
     }
 
-
-    // Handle button click event
-    private void handleButtonClick(int x, int y) {
-        JButton button = buttons[x][y];
-        String buttonText = button.getText();
-
-        // Display information about the clicked case
-        switch (buttonText) {
-            case "Lucky Case":
-                // Handle lucky case information display
-                // ...
-                break;
-            case "Goblin":
-                // Handle goblin information display
-                // ...
-                break;
-            case "Sorcier":
-                // Handle sorcier information display
-                // ...
-                break;
-            case "Dragon":
-                // Handle dragon information display
-                // ...
-                break;
-            default:
-                // Handle other cases
-                // ...
-                break;
-        }
-    }
-
-    // Obtenir une case spéciale en fonction de la distribution pondérée
-    private String getSpecialCase() {
-        int totalWeight = specialCases.values().stream().mapToInt(Integer::intValue).sum();
-        int randomIndex = new Random().nextInt(totalWeight);
-
-        for (Map.Entry<String, Integer> entry : specialCases.entrySet()) {
-            randomIndex -= entry.getValue();
-            if (randomIndex < 0) {
-                String specialCase = entry.getKey();
-                if (luckyCases.contains(specialCase)) {
-                    int caseCount = countSpecialCase(specialCase);
-                    if (caseCount >= specialCases.get(specialCase)) {
-                        luckyCases.remove(specialCase);
-                        return null; // Skip adding more than the desired count
-                    }
-                    return "Lucky Case";
-                } else if (specialCase.equals("Dragon")) {
-                    int dragonCount = countSpecialCase("Dragon");
-                    if (dragonCount >= specialCases.get("Dragon")) {
-                        return null; // Skip adding more dragons than the desired count
-                    }
-                    return "Dragon";
-                } else if (specialCase.equals("Goblin")) {
-                    int goblinCount = countSpecialCase("Goblin");
-                    if (goblinCount >= specialCases.get("Goblin")) {
-                        return null; // Skip adding more goblins than the desired count
-                    }
-                    return "Goblin";
-                } else if (specialCase.equals("Sorcier")) {
-                    int sorcierCount = countSpecialCase("Sorcier");
-                    if (sorcierCount >= specialCases.get("Sorcier")) {
-                        return null; // Skip adding more sorciers than the desired count
-                    }
-                    return "Sorcier";
-                } else if (countSpecialCase(specialCase) >= 1) {
-                    return null; // Skip adding more than one of non-lucky special cases
-                }
-                return specialCase;
+    private void setupButtonState(JButton button, int i, int j) {
+        button.addActionListener(e -> {
+            if (i == playerPos.x && j == playerPos.y) {
+                displayCaseInformation(button.getText());
             }
-        }
-
-        return null;
-    }
-
-    // Count the occurrence of a special case on the board
-    private int countSpecialCase(String specialCase) {
-        int count = 0;
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                JButton button = buttons[i][j];
-                if (button != null && button.getText() != null) {
-                    if (button.getText().equals(specialCase)){
-                        count++;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    // Avancer le joueur
-    private void advancePlayer(int steps) {
-        int i = xyPlayerPos[0];
-        int j = xyPlayerPos[1];
-
-        // Calculate the new position of the player
-        int newI;
-        int newJ;
-        if (i % 2 == 0) {
-            newI = i;
-            newJ = j + steps;
-            if (newJ > 7) {
-                newI += 1;
-                newJ = 7 - (newJ % 8);
-            }
+        });
+        if (i == playerPos.x && j == playerPos.y) {
+            button.setText("You");
+            button.setBackground(new Color(83, 156, 190));
+            button.setForeground(Color.BLACK);
+        } else if (i == 7 && j == 7) {  // "End" is moved to the bottom-right position
+            button.setText("End");
+            button.setBackground(new Color(122 , 200, 109));
+            button.setForeground(Color.BLACK);
         } else {
-            newI = i;
-            newJ = j - steps;
-            if (newJ < 0) {
-                newI += 1;
-                newJ = -newJ - 1;
-            }
+            setRandomEnemy(button, i, j);
+        }
+    }
+
+    private void setRandomEnemy(JButton button, int i, int j) {
+        // Generate list of all possible cases according to their quantities
+        List<String> options = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : SPECIAL_CASES.entrySet()) {
+            options.addAll(Collections.nCopies(entry.getValue(), entry.getKey()));
         }
 
-        // Check if the new position exceeds board boundaries
-        if (newI > 7) {
-            newI = 7;
-            newJ = 0; // Make sure to reach the last cell when newI becomes 7.
-        }
-        if (newJ > 7) {
-            newJ = 7;
-        }
-        if (newI < 0) {
-            newI = 0;
-        }
-        if (newJ < 0) {
-            newJ = 0;
+        if (options.isEmpty()) {
+            button.setText("");
+            button.setBackground(Color.GRAY);
+            button.setForeground(Color.BLACK);
+            return;
         }
 
-        if (buttons[xyPlayerPos[0]][xyPlayerPos[1]] != null &&
-                buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName() != null) {
-            if (buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Dragon") ||
-                    buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Goblin") ||
-                    buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName().equals("Sorcier")) {
+        Random rand = new Random();
+        String enemyName = options.get(rand.nextInt(options.size()));
+        specialCases.put(enemyName, specialCases.getOrDefault(enemyName, 0) + 1);
 
-                Enemy monster = monsters.get(buttons[xyPlayerPos[0]][xyPlayerPos[1]].getName());
-                combatPanel.startBattle(player, monster);
-                cardLayout.show(cards, "Combat");
-            }
-        }
-        buttons[xyPlayerPos[0]][xyPlayerPos[1]].setText("");
-        buttons[0][0].setText("Start");
-        // Update the player's position
-        xyPlayerPos[0] = newI;
-        xyPlayerPos[1] = newJ;
-
-        // Check if the player has won
-        if (newI >= 7 && newJ <= 0) {
-            showVictory();
+        if (LUCKY_CASES.contains(enemyName)) {
+            button.setText("Caisse Chance");
+            button.setBackground(new Color(222, 207, 63));
+            button.setForeground(Color.WHITE);
+            luckyCasesContents.put(button.getText(), enemyName);  // Associate "Caisse Chance" with actual item
+        } else {
+            button.setText(enemyName);
+            button.setBackground(new Color(182, 8, 8));
+            button.setForeground(Color.WHITE);
+            monsters.put(button.getText(), new Enemy(enemyName));
         }
 
-        // Update the button states
-        updateButtonStates();
+        // populate the original text into buttonOrigins map
+        buttonOrigins.put(button, button.getText());
     }
 
 
-    private void updateButtonStates() {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                JButton button = buttons[i][j];
+    private void rollDice() {
+        Random random = new Random();
+        current = random.nextInt(6) + 1;
 
-                if (i == xyPlayerPos[0] && j == xyPlayerPos[1]) {
-                    button.setText("You");
-                    button.setName("You");
-                } else if (i == 7 && j == 0) {
-                    button.setText("End");
-                    button.setName("End");
+        int newX = playerPos.x;
+        int newY = playerPos.y;
+
+        if ((playerPos.x + current) / 8 > playerPos.x / 8) {
+            newX = (playerPos.x + current) % 8;
+            newY++;
+        } else {
+            newX = playerPos.x + current;
+        }
+
+        // If newX or newY is greater than 7, set it to 7
+        newX = Math.min(newX, 7);
+        newY = Math.min(newY, 7);
+
+        String originalText = buttonOrigins.get(buttons[playerPos.x][playerPos.y]);
+
+        // Reset the button text to the original string when the player leaves
+        buttons[playerPos.x][playerPos.y].setText(originalText);
+        buttons[playerPos.x][playerPos.y].setBackground(new Color(255, 255, 255));
+
+        playerPos.setLocation(newX, newY);
+
+        // If the player reaches the end, display the winning message and close the game
+        if (newX >= 7 && newY >= 7) {
+            JOptionPane.showMessageDialog(frame, "Congratulations! You reached the end. Here are your stats: " + player);
+            frame.dispose();
+            return;
+        }
+
+        setupButtonState(buttons[newX][newY], newX, newY);
+        // We get the original text before the move to call the method.
+        displayCaseInformation(originalText);
+        setupButtonState(buttons[newX][newY], newX, newY);
+    }
+
+    private void displayCaseInformation(String text) {
+        String originalText = buttonOrigins.get(buttons[playerPos.x][playerPos.y]);
+
+        // Check if the originalText is null
+        if (originalText == null) {
+            JOptionPane.showMessageDialog(frame, "This is an empty case.");
+            return;
+        }
+
+        // If it's a "Caisse Chance", we need to handle it differently
+        if (originalText.equals("Caisse Chance")) {
+            // Retrieve actual item associated with "Caisse Chance"
+            String itemName = luckyCasesContents.get(buttons[playerPos.x][playerPos.y]);
+
+            // Add conditions here for each item type
+            switch (itemName) {
+                case "PotionS", "PotionM" -> {
+                    player.getInventory().add(itemName); // add the potion to the player inventory
+                    JOptionPane.showMessageDialog(frame, "En ouvrant la caisse, tu trouves une " + itemName);
                 }
+                case "Epee", "Massue" -> {
+                    if (player.getClass() == Mage.class) {
+                        JOptionPane.showMessageDialog(frame, "Tu ne peux pas prendre cela car tu es un Mage.");
+                    } else {
+                        player.getArme().setDegats(itemName.equals("Epee") ? 3 : 5);
+                        player.getArme().setNom(itemName);
+                        if (itemName.equals("Massue")) player.getArme().setEffect(new Stun());
+                        JOptionPane.showMessageDialog(frame, "En ouvrant la caisse, tu trouves une " + itemName);
+                    }
+                }
+                case "Eclair", "Boule de Feu" -> {
+                    if (player.getClass() == Guerrier.class) {
+                        JOptionPane.showMessageDialog(frame, "Tu ne peux pas prendre cela car tu es un Guerrier.");
+                    } else {
+                        player.getArme().setNom(itemName);
+                        player.getArme().setDegats(itemName.equals("Eclair") ? 10 : 15);
+                        if (itemName.equals("Boule de Feu")) {
+                            player.getArme().setEffect(new Burn());
+                        } else {
+                            player.getArme().setEffect(new Stun());
+                        }
+                        JOptionPane.showMessageDialog(frame, "Une caisse chance, en l'ouvrant tu trouves un sort de  " + itemName);
+                    }
+                }
+                default -> JOptionPane.showMessageDialog(frame, "Une caisse chance, mais tu ne trouves rien.");
             }
+            return;
         }
-    }
 
-
-    public void actionPerformed(ActionEvent e) {
-        // Get the source of the action
-        JButton button = (JButton) e.getSource();
-
-        // Get the button's text
-        String buttonText = button.getText();
-
-        try {
-            // Parse the button text as an integer
-            int steps = Integer.parseInt(buttonText);
-
-            // Advance the player by the specified number of steps
-            advancePlayer(steps);
-        } catch (NumberFormatException ex) {
-            // Handle non-numeric inputs (e.g., "Lucky Case")
-            if (buttonText.equals("Lucky Case")) {
-                // Open a loot box or add potion/equipment to inventory
-                //openLootBox();
-                System.out.println("GJ LOOT");
-            } else if (buttonText.equals("Dragon")) {
-                // Fight the monster
-                //fightMonster();
-                System.out.println("GJ BOSS");
-            } else if (buttonText.equals("Goblin") || buttonText.equals("Sorcier")) {
-                // Fight the monster
-                //fightMonster();
-                System.out.println("GJ ENNEMI");
-            } else {
-                System.out.println("BLANK");
-            }
+        // Check if the player reached the end
+        if (playerPos.x >= 7 && playerPos.y >= 7) {
+            JOptionPane.showMessageDialog(frame, "Congratulations! You reached the end. Here are your stats: " + player);
+            frame.dispose();
+            return;
         }
-    }
 
+        Enemy enemy = monsters.get(originalText);
+        if (enemy == null) {
+            JOptionPane.showMessageDialog(frame, "No enemy found for the case: " + originalText);
+            return;
+        }
 
-    // Victoire
-    private void showVictory() {
-        // POP UP
-        JOptionPane.showMessageDialog(frame, "Tu as gagné !");
-        frame.dispose(); // Fermer la fenetre
-        frame.getContentPane().requestFocus(); // Mettre le focus sur le thread fenetre principal
+        cardLayout = (CardLayout) cards.getLayout(); // Get the CardLayout from the parent container
+        cardLayout.show(cards, "Combat");
+        combatPanel.startBattle(player, enemy);
     }
 }

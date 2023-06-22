@@ -45,8 +45,13 @@ public abstract class Personnage {
         }
     }
 
+    private Inventory inventory = new Inventory();
+
+    public Inventory getInventory() {
+        return inventory;
+    }
 
     //inutile pour le moment
     @SuppressWarnings("unused")
-    public abstract void attaquer(Personnage personnage);
+    public abstract void attaquer(Enemy ennemy);
 }

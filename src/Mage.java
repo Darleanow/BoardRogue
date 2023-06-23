@@ -35,7 +35,7 @@ public class Mage extends Personnage {
     }
 
     @Override
-    public void attaquer(Personnage personnage)
+    public void attaquer(Enemy ennemy)
     {
         sort.cast();
         //Ajouter logique si besoin

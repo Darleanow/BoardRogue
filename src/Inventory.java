@@ -8,10 +8,13 @@ public class Inventory {
         items.add(item);
     }
 
-    public boolean usePotion() {
-        if (items.remove("PotionS") || items.remove("PotionM")) {
-            return true;
+    public int usePotion() {
+        if (items.remove("PotionM")) {
+            return 10;
+        } else if (items.remove("PotionS")) {
+            return 5;
         }
-        return false;
+        return -1;
     }
+
 }

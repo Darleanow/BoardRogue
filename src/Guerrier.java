@@ -42,7 +42,7 @@ public class Guerrier extends Personnage {
 
     //attaquer un personnage
     @Override
-    public void attaquer(Personnage personnage)
+    public void attaquer(Enemy ennemy)
     {
         arme.cast();
         //ajouter si besoin...

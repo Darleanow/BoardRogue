@@ -4,6 +4,7 @@ public class Bouclier extends DefenseBase {
     {
         this.nom = nom;
         this.hp = hp;
+        this.maxHp = hp;
     }
 
     //setter nom

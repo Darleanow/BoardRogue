@@ -51,6 +51,10 @@ public abstract class Personnage {
         return inventory;
     }
 
+    public void changeWeapon(Arme newWeapon) {
+        this.arme = newWeapon;
+    }
+
     //inutile pour le moment
     @SuppressWarnings("unused")
     public abstract void attaquer(Enemy ennemy);
